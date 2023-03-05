@@ -194,52 +194,48 @@ class Grid:
         Goes through each Cell in a box and finds which potential values only appear once. Then it fills in the appropriate Cells.
         :param box_num: the box's ID number
         """
-        x, y = box_dict[box_num]
-       
-        # All unsolved values within the box
-        total_options = []
-        # The unsolved values that are only found once
-        forced_options = []
+        x,y = box_dict[box_num]
+        value_locations = {}
+        # prevents solved values from being checked unnecessarily
+        remaining_values = [e for e in possible_values if e not in self.s_boxes[box_num]] 
+        # make a dictionary of all cells an unsolved value is legal in
+        for val in remaining_values:
+            legal_cells = []
+            for r in range(x, x+3):
+                for c in range(y, y+3):
+                    if val in self.grid[r][c].legal_values:
+                        legal_cells.append((r,c))
+            
+            value_locations[val]=legal_cells
 
-        for r in range(x, x + 3):
-            for c in range(y, y + 3):
-                total_options += self.grid[r][c].legal_values
+        # make a list of all values that only appear once
+        for val in remaining_values:  
+            if len(value_locations[val]) == 1:
+                r,c = value_locations[val][0]
+                self.grid[r][c].set(val)
 
-        for item in possible_values:
-            if item in total_options:
-                count = total_options.count(item)
-                if count == 1:
-                    forced_options.append(item)
-
-        if len(forced_options) > 0:
-            for num in forced_options:
-                # go back and find the Cell that has that number as a legal value
-                for r in range(x, x + 3):
-                    for c in range(y, y + 3):
-                        if num in self.grid[r][c].legal_values:
-                            self.grid[r][c].set(num)
-            # there might've been a more elegant way to do this but this works so we'll roll with it.
 
     def row_forced_placement(self, row):
         """
         Goes through each Cell in a row and finds which values only appear once. Then it fills in the appropriate Cells.
         :param row: which row it's checking
         """
-        total_options = []
-        forced_options = []
-        for i in range(9):
-            total_options += self.grid[row][i].legal_values
+        value_locations = {}
+        
+        remaining_values = [e for e in possible_values if e not in self.s_rows[row]]
+        # make a dictionary of all cells a value is legal in
+        for i in remaining_values:
+            legal_cells = []
+            for y in range(9):
+                if i in self.grid[row][y].legal_values:
+                    legal_cells.append(y)
+            value_locations[i]=legal_cells
 
-        for item in possible_values:  
-            if item in total_options:  
-                if total_options.count(item) == 1:
-                    forced_options.append(item)
-
-        if len(forced_options) > 0:
-            for num in forced_options:
-                for i in range(9):
-                    if num in self.grid[row][i].legal_values:
-                        self.grid[row][i].set(num)
+        # make a list of all values that only appear twice
+        for i in remaining_values:  
+            if len(value_locations[i]) == 1:
+                y = value_locations[i][0]
+                self.grid[row][y].set(i)
 
     def col_forced_placement(self, col):
         """
@@ -247,24 +243,22 @@ class Grid:
         Cells.
         :param col: which column it's checking
         """
-        total_options = []
-        forced_options = []
-        for i in range(9):
-            total_options += self.grid[i][col].legal_values
+        value_locations = {}
+  
+        remaining_values = [e for e in possible_values if e not in self.s_cols[col]]
+        # make a dictionary of all cells a value is legal in
+        for i in remaining_values:
+            legal_cells = []
+            for x in range(9):
+                if i in self.grid[x][col].legal_values:
+                    legal_cells.append(x)
+            value_locations[i]=legal_cells
 
-        for item in possible_values:
-            if item in total_options:
-                count = total_options.count(item)
-                if count == 1:
-                    forced_options.append(item)
-                else:
-                    total_options.remove(item)
-
-        if len(forced_options) > 0:
-            for num in forced_options:
-                for i in range(9):
-                    if num in self.grid[i][col].legal_values:
-                        self.grid[i][col].set(num)
+        # make a list of all values that only appear twice
+        for i in remaining_values:  
+            if len(value_locations[i]) == 1:
+                x = value_locations[i][0]
+                self.grid[x][col].set(i)
 
     def locked_row(self, box_num):
         """
@@ -402,9 +396,10 @@ class Grid:
         x,y = box_dict[box_num]
         value_locations = {}
         hidden_options = []
-        
-        # make a dictionary of all cells a value is legal in
-        for i in possible_values:
+        # prevents solved values from being checked unnecessarily
+        remaining_values = [e for e in possible_values if e not in self.s_boxes[box_num]] 
+        # make a dictionary of all cells an unsolved value is legal in
+        for i in remaining_values:
             legal_cells = []
             for r in range(x, x+3):
                 for c in range(y, y+3):
@@ -413,7 +408,7 @@ class Grid:
             value_locations[i]=legal_cells
 
         # make a list of all values that only appear twice
-        for i in possible_values:  
+        for i in remaining_values:  
             if len(value_locations[i]) == 2:
                 hidden_options.append(i)
         
@@ -428,8 +423,7 @@ class Grid:
                     for r,c in value_locations[val]:
                         self.grid[r][c].set([val, value_a])
                 break
-            if rem_val !="0":
-                print(rem_val)
+            if rem_val !="0": 
                 hidden_options.remove(rem_val) #  remove matching value to avoid extra loops
     
     def hidden_row_pair(self, row):
@@ -440,9 +434,9 @@ class Grid:
         
         value_locations = {}
         hidden_options = []
-        
+        remaining_values = [e for e in possible_values if e not in self.s_rows[row]]
         # make a dictionary of all cells a value is legal in
-        for i in possible_values:
+        for i in remaining_values:
             legal_cells = []
             for y in range(9):
                 if i in self.grid[row][y].legal_values:
@@ -450,7 +444,7 @@ class Grid:
             value_locations[i]=legal_cells
 
         # make a list of all values that only appear twice
-        for i in possible_values:  
+        for i in remaining_values:  
             if len(value_locations[i]) == 2:
                 hidden_options.append(i)
         
@@ -476,9 +470,9 @@ class Grid:
         
         value_locations = {}
         hidden_options = []
-        
+        remaining_values = [e for e in possible_values if e not in self.s_cols[col]]
         # make a dictionary of all cells a value is legal in
-        for i in possible_values:
+        for i in remaining_values:
             legal_cells = []
             for x in range(9):
                 if i in self.grid[x][col].legal_values:
@@ -486,7 +480,7 @@ class Grid:
             value_locations[i]=legal_cells
 
         # make a list of all values that only appear twice
-        for i in possible_values:  
+        for i in remaining_values:  
             if len(value_locations[i]) == 2:
                 hidden_options.append(i)
         
