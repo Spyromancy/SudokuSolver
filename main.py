@@ -2,12 +2,10 @@
 Sudoku Solver
 reads in a 9x9 sudoku square with blanks filled in as '0'
 separates the puzzle into 9 rows, 9 columns, and 9 3x3 squares
-rows, columns, and squares will be made up of "cells"
+rows, columns, and squares will be made up of Cell objects
     - squares will be 0 | 1 | 2
                       3 | 4 | 5
                       6 | 7 | 8
-
-The Rows, columns and squares
 """
 
 grid = "006080900 309760800 040201007 930000000 081649230 000000089 100408090 002037501 003010700"
@@ -35,7 +33,7 @@ class Cell:
         self.legal_values = []  # A list of all legal values that could fill in this cell
 
         if self.value == "0":
-            self.legal_values = list("123456789")
+            self.legal_values = list("123456789") 
 
     def get_coords(self):
         """
@@ -51,6 +49,7 @@ class Cell:
 
         if after update is run there is only 1 remaining legal value the Cell will automatically fill itself in.
         """
+        
         # for each item in the list of illegal values
         for item in illegal_values:
             # if that item is currently considered a possible legal value,
@@ -69,7 +68,7 @@ class Cell:
         :param kept_values: a list of values you want to set as the only possible candidates for the Cell
         """
         nix = list("123456789")
-        nix.remove(kept_values)
+        nix = [num for num in nix if num not in kept_values]
         self.update(nix)
 
     def __str__(self):
@@ -80,7 +79,7 @@ class Grid:
     def __init__(self, grid_values):
         """
 
-        :param grid_values: a single string of the values in the grid, row by row, with each row separated with a SPACE.
+        :param grid_values: a single string of the values in the grid, row by row, top to bottom, with each row separated with a SPACE.
         A list of strings is also acceptable. Do NOT make a list of lists, I will punch you.
 
         """
@@ -105,12 +104,15 @@ class Grid:
                 grid_values[i] = list(grid_values[i])
             self.grid_values = grid_values
         # turns grid_values into a list of string lists
-
+            # 2023 self here, i'm assuming you don't want people to give you a list of lists because that'd be a PITA to create for a person, better to let the code 
+            # do it for you but it seems like you went out of your way to not make it possible for it to work and I don't understand why you did that past me. like, c'mon.
+                # Q. so why don't you add it now?
+                # A. i don't wanna.
         else:
-            print("I only accept a single string separated with spaces or a list of 9 strings.")
+            print("I only accept a single string separated with spaces or a list of 9 strings.") # 2023: again like, c'mon man
             raise TypeError
             #  if(type(grid_values)== list and type(grid_values[0])== list)
-                #  print("Also, i'm punching you.")
+                #  print("Also, i'm punching you.") 
 
         # populate the rows and columns of the sudoku puzzle with Cells
         for x in range(9):
@@ -127,8 +129,12 @@ class Grid:
 
             # creates a list of each unique solved value in that row
             s_row = list(set(s_row))
+            if('0' in s_row):
+                s_row.remove('0')
             # creates a list of each unique solved value in that column
             s_col = list(set(s_col))
+            if('0' in s_col):
+                s_col.remove('0')
 
             self.s_rows.append(s_row)
             self.s_cols.append(s_col)
@@ -141,6 +147,8 @@ class Grid:
                         s_box.append(self.grid_values[x_base + x][y_base + y])
                 s_box = list(set(s_box))  # creates a list of each unique solved value in that box
                 self.s_boxes.append(s_box)
+        
+
         self.solve()
 
     def update(self):
@@ -161,6 +169,7 @@ class Grid:
         :param y_coord: the y-coordinate of the row being checked. 
 
         """
+        #  so I realize box_check is just a strictly better version since it gets all 3, but i don't wanna delete this just in case
         for i in range(9):
             if self.grid[y_coord][i].value == "0":
                 illegal_values = self.s_rows[y_coord] + self.s_cols[i]
@@ -177,7 +186,7 @@ class Grid:
         for r in range(x, x + 3):
             for c in range(y, y + 3):
                 if self.grid[r][c].value == "0":
-                    illegal_values = list(set(self.s_boxes[box_num] + self.s_cols[c] + self.s_rows[r]))
+                    illegal_values = list(set(self.s_boxes[box_num] + self.s_cols[c] + self.s_rows[r]))  
                     self.grid[r][c].update(illegal_values)
 
     def box_forced_placement(self, box_num):
@@ -186,9 +195,10 @@ class Grid:
         :param box_num: the box's ID number
         """
         x, y = box_dict[box_num]
+       
         # All unsolved values within the box
         total_options = []
-        # The unsolved values that are only found in one
+        # The unsolved values that are only found once
         forced_options = []
 
         for r in range(x, x + 3):
@@ -200,16 +210,15 @@ class Grid:
                 count = total_options.count(item)
                 if count == 1:
                     forced_options.append(item)
-                else:
-                    # prevents the code from checking the same number multiple times.
-                    total_options.remove(item)  # total_options = (e for e in total_options if e not in (item))
 
         if len(forced_options) > 0:
             for num in forced_options:
+                # go back and find the Cell that has that number as a legal value
                 for r in range(x, x + 3):
                     for c in range(y, y + 3):
                         if num in self.grid[r][c].legal_values:
                             self.grid[r][c].set(num)
+            # there might've been a more elegant way to do this but this works so we'll roll with it.
 
     def row_forced_placement(self, row):
         """
@@ -221,13 +230,10 @@ class Grid:
         for i in range(9):
             total_options += self.grid[row][i].legal_values
 
-        for item in possible_values:
-            if item in total_options:
-                count = total_options.count(item)
-                if count == 1:
+        for item in possible_values:  
+            if item in total_options:  
+                if total_options.count(item) == 1:
                     forced_options.append(item)
-                else:
-                    total_options.remove(item)
 
         if len(forced_options) > 0:
             for num in forced_options:
@@ -244,7 +250,7 @@ class Grid:
         total_options = []
         forced_options = []
         for i in range(9):
-            total_options += self.grid[col][i].legal_values
+            total_options += self.grid[i][col].legal_values
 
         for item in possible_values:
             if item in total_options:
@@ -257,8 +263,8 @@ class Grid:
         if len(forced_options) > 0:
             for num in forced_options:
                 for i in range(9):
-                    if num in self.grid[col][i].legal_values:
-                        self.grid[col][i].set(num)
+                    if num in self.grid[i][col].legal_values:
+                        self.grid[i][col].set(num)
 
     def locked_row(self, box_num):
         """
@@ -328,7 +334,7 @@ class Grid:
     def naked_box_pair(self, box_num):
         """
         checks to see if two Cells both only have the same 2 legal values available to them. If they do, it removes
-        those values as options from other Cells in the bow
+        those values as options from other Cells in the box
         :param box_num: which box we're looking at
         """
         x, y = box_dict[box_num]
@@ -377,27 +383,133 @@ class Grid:
         """
         cells = []
         for c in range(9):
-            if len(self.grid[row][c].legal_values) == 2:
-                cells.append(self.grid[row][c])
+            if len(self.grid[row][c].legal_values) == 2: #  if the cell only has 2 legal values
+                cells.append(self.grid[row][c])  #  add it to the list
 
-        while len(cells) > 1:
-            cell_a = cells.pop()
-            for cell in cells:
-                if cell.legal_values == cell_a.legal_values:
+        while len(cells) > 1: #  while there's still cells to compare to
+            cell_a = cells.pop() #  remove a cell the list
+            for cell in cells: #  check it against the remaining cells
+                if cell.legal_values == cell_a.legal_values: #  if they have matching legal values
                     for c in range(9):
-                        if cell.get_coords() != self.grid[row][c].get_coords() != cell_a.get_coords():
-                            self.grid[row][c].update(cell.legal_values)
+                        if cell.get_coords() != self.grid[row][c].get_coords() != cell_a.get_coords(): # except for the cells we're looking at
+                            self.grid[row][c].update(cell.legal_values) #  remove those legal values from all other cells in the row
 
+    def hidden_box_pair(self, box_num):
+        """
+        checks to see if a pair of numbers are only available in two cells in a given box and removes all other legal values from the cell.
+        :param box_num: which box we're looking at
+        """
+        x,y = box_dict[box_num]
+        value_locations = {}
+        hidden_options = []
+        
+        # make a dictionary of all cells a value is legal in
+        for i in possible_values:
+            legal_cells = []
+            for r in range(x, x+3):
+                for c in range(y, y+3):
+                    if i in self.grid[r][c].legal_values:
+                        legal_cells.append((r,c))
+            value_locations[i]=legal_cells
+
+        # make a list of all values that only appear twice
+        for i in possible_values:  
+            if len(value_locations[i]) == 2:
+                hidden_options.append(i)
+        
+        # check if those values appear in the same two cells
+        while len(hidden_options) >= 2:
+            value_a = hidden_options.pop()
+            rem_val = "0"
+            for val in hidden_options:
+                if value_locations[value_a] == value_locations[val]:
+                    # if they do remove all other values from those cells
+                    rem_val = val # remember which value matched to remove it
+                    for r,c in value_locations[val]:
+                        self.grid[r][c].set([val, value_a])
+                break
+            if rem_val !="0":
+                print(rem_val)
+                hidden_options.remove(rem_val) #  remove matching value to avoid extra loops
+    
     def hidden_row_pair(self, row):
+        """
+        checks to see if a pair of numbers are only available in two cells in a given row and removes all other legal values from the cell.
+        :param row: which row we're looking at
+        """
+        
+        value_locations = {}
+        hidden_options = []
+        
+        # make a dictionary of all cells a value is legal in
+        for i in possible_values:
+            legal_cells = []
+            for y in range(9):
+                if i in self.grid[row][y].legal_values:
+                    legal_cells.append(y)
+            value_locations[i]=legal_cells
 
-        pass
+        # make a list of all values that only appear twice
+        for i in possible_values:  
+            if len(value_locations[i]) == 2:
+                hidden_options.append(i)
+        
+        # check if those values appear in the same two cells
+        while len(hidden_options) >= 2:
+            value_a = hidden_options.pop()
+            rem_val = "0"
+            for val in hidden_options:
+                if value_locations[value_a] == value_locations[val]:
+                    # if they do remove all other values from those cells
+                    rem_val = val # remember which value matched to remove it
+                    for y in value_locations[val]:
+                        self.grid[row][y].set([val, value_a])
+                break
+            if rem_val !="0":
+                hidden_options.remove(rem_val) #  remove matching value to avoid extra loops
+    
+    def hidden_col_pair(self, col):
+        """
+        checks to see if a pair of numbers are only available in two cells in a given col and removes all other legal values from the cell.
+        :param col: which column we're looking at
+        """
+        
+        value_locations = {}
+        hidden_options = []
+        
+        # make a dictionary of all cells a value is legal in
+        for i in possible_values:
+            legal_cells = []
+            for x in range(9):
+                if i in self.grid[x][col].legal_values:
+                    legal_cells.append(x)
+            value_locations[i]=legal_cells
+
+        # make a list of all values that only appear twice
+        for i in possible_values:  
+            if len(value_locations[i]) == 2:
+                hidden_options.append(i)
+        
+        # check if those values appear in the same two cells
+        while len(hidden_options) >= 2:
+            value_a = hidden_options.pop()
+            rem_val = "0"
+            for val in hidden_options:
+                if value_locations[value_a] == value_locations[val]:
+                    # if they do remove all other values from those cells
+                    rem_val = val # remember which value matched to remove it
+                    for x in value_locations[val]:
+                        self.grid[x][col].set([val, value_a])
+                break
+            if rem_val !="0":
+                hidden_options.remove(rem_val) #  remove matching value to avoid extra loops        
 
     def compare_legal_values(self, cell_a, box_num):
         x, y = box_dict[box_num]
-        x2, y2 = cell_a.get_coords()
+        cell_x, cell_y = cell_a.get_coords()
         for r in range(x, x + 3):
             for c in range(y, y + 3):
-                if x2 != r and y2 != c:
+                if cell_x != r and cell_y != c:
                     if len(self.grid[r][c].legal_values) == 2:
                         if cell_a.legal_values.sort() == self.grid[r][c].legal_values.sort():
                             return r, c
@@ -412,6 +524,12 @@ class Grid:
         :param recurred:
         :return:
         """
+  
+        if self.is_solved():
+            print("It is done: \n")
+            print(self.formatted_grid())
+            return
+
         for i in range(9):
             self.box_check(i)
             self.box_forced_placement(i)
@@ -429,15 +547,23 @@ class Grid:
             self.naked_col_pair(i)
             self.naked_row_pair(i)
 
-        if self.is_solved():
-            print(self.__str__())
-        elif self.has_changed():
+        for i in range(9):
+            self.hidden_box_pair(i)
+            self.hidden_col_pair(i)
+            self.hidden_row_pair(i)
+        
+        if self.has_changed():
             self.update()
         else:
             if not recurred:
                 self.solve(True)
             else:
-                print(self.__str__())
+                print("I got stuck somewhere, this is the best i got.")
+
+                print(self.grid[8][0].legal_values)
+                print(self.grid[8][1].legal_values)                
+                
+                print(self.formatted_grid())
 
     def is_solved(self):
         gr = ""
@@ -454,12 +580,23 @@ class Grid:
                 gr += str(cell)
             gr += "\n"
         return self.__str__() != gr
-
+    
+    def formatted_grid(self):
+        g_v = []
+        for i in range(9):
+            row = self.grid_values[i]
+            row.insert(6, " ")
+            row.insert(3, " ")
+            g_v.append("".join(row))
+            if i == 2 or i == 5:
+                g_v.append(" ")
+        
+        return "\n".join(g_v)
+    
     def __str__(self):
         g_v = []
         for row in self.grid_values:
             g_v.append("".join(row))
         return "\n".join(g_v)
 
-
-g = Grid("009000602 100720009 003900000 400030060 000509000 010060003 000005200 500047008 908000300")
+g = Grid("000000000 018049000 950073860 600000980 500010003 074000006 097320045 000490120 000000000")
