@@ -213,7 +213,7 @@ class Grid:
         value_locations = {}
         # prevents solved values from being checked unnecessarily
         unsolved_values = [e for e in possible_values if e not in self.s_boxes[box_num]] 
-        # make a dictionary of all cells an unsolved value is legal in
+        # make a dictionary of all Cells an unsolved value is legal in
         for val in unsolved_values:
             legal_cells = []
             for r in range(x, x+3):
@@ -223,7 +223,7 @@ class Grid:
             
             value_locations[val]=legal_cells
 
-        # make a list of all values that only appear once
+        # set values that only appear once in the appropriate Cell
         for val in unsolved_values:  
             if len(value_locations[val]) == 1:
                 r,c = value_locations[val][0]
@@ -245,7 +245,7 @@ class Grid:
                     legal_cells.append(y)
             value_locations[i]=legal_cells
 
-        # make a list of all values that only appear twice
+        # set values that only appear once in the appropriate Cell
         for i in unsolved_values:  
             if len(value_locations[i]) == 1:
                 y = value_locations[i][0]
@@ -268,7 +268,7 @@ class Grid:
                     legal_cells.append(x)
             value_locations[i]=legal_cells
 
-        # make a list of all values that only appear twice
+       # set values that only appear once in the appropriate Cell
         for i in unsolved_values:  
             if len(value_locations[i]) == 1:
                 x = value_locations[i][0]
@@ -481,8 +481,6 @@ class Grid:
         
         self.x_wing_check_row(x_wing_values, row, value_locations)
         
-
-
     def x_wing_check_row(self, values, starting_row, value_locations):
         """
         if there is a hidden pair, check other rows to see if there is an x-wing pattern
@@ -586,25 +584,13 @@ class Grid:
                                     self.grid[x1][i].update(value)
                                     self.grid[x2][i].update(value)
 
-    def compare_legal_values(self, cell_a, box_num):
-        x, y = box_dict[box_num]
-        cell_x, cell_y = cell_a.get_coords()
-        for r in range(x, x + 3):
-            for c in range(y, y + 3):
-                if cell_x != r and cell_y != c:
-                    if len(self.grid[r][c].legal_values) == 2:
-                        if cell_a.legal_values.sort() == self.grid[r][c].legal_values.sort():
-                            return r, c
-        return -1, -1
-
     def solve(self, recurred=False):
         """
         attempts to solve the sudoku puzzle. It will update the grid if it has gone through the cycle and a value has
-        changed. If nothing changed, it will go through the cycle one more time, just in case the legal values changed
+        changed. If nothing changed, it will go through the cycle one more time, just in case the changed legal values
         allowed for something to be solved. If after the second pass there is still no change, or no empty cells remain,
         it will print out the grid in its current state.
         :param recurred:
-        :return:
         """
   
         if self.is_solved():
@@ -612,27 +598,43 @@ class Grid:
             print(self.formatted_grid())
             return
 
+        #forced placement(box)
         for i in range(9):
             self.box_check(i)
-            self.box_forced_placement(i)
-
+            if not len(self.s_boxes[i])==9:
+                self.box_forced_placement(i)
+        
+        #forced placement(row/col)
         for i in range(9):  # Due to how much boxes intersect with rows/cols it felt right to not do them together
-            self.row_forced_placement(i)
-            self.col_forced_placement(i)
+            if not len(self.s_rows[i])==9:
+                self.row_forced_placement(i)
+            if not len(self.s_cols[i])==9:
+                self.col_forced_placement(i)
 
+        #locked pairs
         for i in range(9):
-            self.locked_col(i)
-            self.locked_row(i)
+            if not len(self.s_cols[i])==9: #skips completely solved columns
+                self.locked_col(i)
+            if not len(self.s_rows[i])==9:
+                self.locked_row(i)
 
+        # naked pairs
         for i in range(9):
-            self.naked_box_pair(i)
-            self.naked_col_pair(i)
-            self.naked_row_pair(i)
-
+            if not len(self.s_boxes[i])==9:
+                self.naked_box_pair(i)
+            if not len(self.s_cols[i])==9:
+                self.naked_col_pair(i)
+            if not len(self.s_rows[i])==9:
+                self.naked_row_pair(i)
+        
+        # hidden pairs
         for i in range(9):
-            self.hidden_box_pair(i)
-            self.hidden_col_pair(i)
-            self.hidden_row_pair(i)
+            if not len(self.s_boxes[i])==9:
+                self.hidden_box_pair(i)
+            if not len(self.s_cols[i])==9:
+                self.hidden_col_pair(i)
+            if not len(self.s_rows[i])==9:
+                self.hidden_row_pair(i)
         
         if self.has_changed():
             self.update()
@@ -641,10 +643,6 @@ class Grid:
                 self.solve(True)
             else:
                 print("I got stuck somewhere, this is the best i got.")
-
-                print(self.grid[8][0].legal_values)
-                print(self.grid[8][1].legal_values)                
-                
                 print(self.formatted_grid())
 
     def is_solved(self):
