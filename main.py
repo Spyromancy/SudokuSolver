@@ -23,9 +23,12 @@ class Cell:
     def __init__(self, x_coord, y_coord, init_value):
         """
 
-        :param x_coord: Lets the Cell know where it is on the X-coordinate for grouping purposes
-        :param y_coord: Lets the Cell know where it is on the Y-coordinate for grouping purposes
-        :param init_value: The Cell's (initial) value, left as 0 for an empty cell
+        :param x_coord: int
+            Lets the Cell know where it is on the X-coordinate for grouping purposes
+        :param y_coord: int
+            Lets the Cell know where it is on the Y-coordinate for grouping purposes
+        :param init_value: str
+            The Cell's (initial) value, left as 0 for an empty cell
         """
         self.value = init_value
         self.x_coord = x_coord
@@ -50,12 +53,8 @@ class Cell:
         if after update is run there is only 1 remaining legal value the Cell will automatically fill itself in.
         """
         
-        # for each item in the list of illegal values
-        for item in illegal_values:
-            # if that item is currently considered a possible legal value,
-            if item in self.legal_values:
-                # remove it from the list of legal values
-                self.legal_values.remove(item)
+        # removes the items in illegal values from the Cell's legal values 
+        self.legal_values = [e for e in self.legal_values if e not in illegal_values]      
 
         # If there is only one possible legal value
         if len(self.legal_values) == 1:
@@ -65,11 +64,27 @@ class Cell:
     def set(self, kept_values):
         """
 
-        :param kept_values: a list of values you want to set as the only possible candidates for the Cell
+        :param kept_values: a value or list of values you want to set as the only possible candidates for the Cell
         """
         nix = list("123456789")
         nix = [num for num in nix if num not in kept_values]
         self.update(nix)
+
+    def can_hold(self, potential_values, contains_all=False):
+        """
+        will check the cell's candidates to see it contains one/all values within potential_values
+        :param potential_values: a list of values you want to see as candidates for the Cell
+        :param contains_all: bool, toggles whether the code checks to see if all values are candidates or any of the values are candidates, defaults to False
+        """
+        for value in potential_values:
+            if value not in self.legal_values and contains_all:
+                return False
+            elif value in self.legal_values and not contains_all:
+                return True
+        if contains_all:
+            return True
+        else:
+            return False
 
     def __str__(self):
         return self.value
@@ -197,9 +212,9 @@ class Grid:
         x,y = box_dict[box_num]
         value_locations = {}
         # prevents solved values from being checked unnecessarily
-        remaining_values = [e for e in possible_values if e not in self.s_boxes[box_num]] 
+        unsolved_values = [e for e in possible_values if e not in self.s_boxes[box_num]] 
         # make a dictionary of all cells an unsolved value is legal in
-        for val in remaining_values:
+        for val in unsolved_values:
             legal_cells = []
             for r in range(x, x+3):
                 for c in range(y, y+3):
@@ -209,11 +224,10 @@ class Grid:
             value_locations[val]=legal_cells
 
         # make a list of all values that only appear once
-        for val in remaining_values:  
+        for val in unsolved_values:  
             if len(value_locations[val]) == 1:
                 r,c = value_locations[val][0]
                 self.grid[r][c].set(val)
-
 
     def row_forced_placement(self, row):
         """
@@ -222,9 +236,9 @@ class Grid:
         """
         value_locations = {}
         
-        remaining_values = [e for e in possible_values if e not in self.s_rows[row]]
+        unsolved_values = [e for e in possible_values if e not in self.s_rows[row]]
         # make a dictionary of all cells a value is legal in
-        for i in remaining_values:
+        for i in unsolved_values:
             legal_cells = []
             for y in range(9):
                 if i in self.grid[row][y].legal_values:
@@ -232,7 +246,7 @@ class Grid:
             value_locations[i]=legal_cells
 
         # make a list of all values that only appear twice
-        for i in remaining_values:  
+        for i in unsolved_values:  
             if len(value_locations[i]) == 1:
                 y = value_locations[i][0]
                 self.grid[row][y].set(i)
@@ -245,9 +259,9 @@ class Grid:
         """
         value_locations = {}
   
-        remaining_values = [e for e in possible_values if e not in self.s_cols[col]]
+        unsolved_values = [e for e in possible_values if e not in self.s_cols[col]]
         # make a dictionary of all cells a value is legal in
-        for i in remaining_values:
+        for i in unsolved_values:
             legal_cells = []
             for x in range(9):
                 if i in self.grid[x][col].legal_values:
@@ -255,7 +269,7 @@ class Grid:
             value_locations[i]=legal_cells
 
         # make a list of all values that only appear twice
-        for i in remaining_values:  
+        for i in unsolved_values:  
             if len(value_locations[i]) == 1:
                 x = value_locations[i][0]
                 self.grid[x][col].set(i)
@@ -397,9 +411,9 @@ class Grid:
         value_locations = {}
         hidden_options = []
         # prevents solved values from being checked unnecessarily
-        remaining_values = [e for e in possible_values if e not in self.s_boxes[box_num]] 
+        unsolved_values = [e for e in possible_values if e not in self.s_boxes[box_num]] 
         # make a dictionary of all cells an unsolved value is legal in
-        for i in remaining_values:
+        for i in unsolved_values:
             legal_cells = []
             for r in range(x, x+3):
                 for c in range(y, y+3):
@@ -408,7 +422,7 @@ class Grid:
             value_locations[i]=legal_cells
 
         # make a list of all values that only appear twice
-        for i in remaining_values:  
+        for i in unsolved_values:  
             if len(value_locations[i]) == 2:
                 hidden_options.append(i)
         
@@ -424,8 +438,8 @@ class Grid:
                         self.grid[r][c].set([val, value_a])
                 break
             if rem_val !="0": 
-                hidden_options.remove(rem_val) #  remove matching value to avoid extra loops
-    
+                hidden_options.remove(rem_val) #  remove matching value to avoid extra loops  
+
     def hidden_row_pair(self, row):
         """
         checks to see if a pair of numbers are only available in two cells in a given row and removes all other legal values from the cell.
@@ -434,9 +448,9 @@ class Grid:
         
         value_locations = {}
         hidden_options = []
-        remaining_values = [e for e in possible_values if e not in self.s_rows[row]]
+        unsolved_values = [e for e in possible_values if e not in self.s_rows[row]]
         # make a dictionary of all cells a value is legal in
-        for i in remaining_values:
+        for i in unsolved_values:
             legal_cells = []
             for y in range(9):
                 if i in self.grid[row][y].legal_values:
@@ -444,10 +458,13 @@ class Grid:
             value_locations[i]=legal_cells
 
         # make a list of all values that only appear twice
-        for i in remaining_values:  
+        for i in unsolved_values:  
             if len(value_locations[i]) == 2:
                 hidden_options.append(i)
         
+        x_wing_values = hidden_options.copy() # i probably could've just called the method first but it feels... rude(?) not to let it finish first
+        
+
         # check if those values appear in the same two cells
         while len(hidden_options) >= 2:
             value_a = hidden_options.pop()
@@ -461,6 +478,42 @@ class Grid:
                 break
             if rem_val !="0":
                 hidden_options.remove(rem_val) #  remove matching value to avoid extra loops
+        
+        self.x_wing_check_row(x_wing_values, row, value_locations)
+        
+
+
+    def x_wing_check_row(self, values, starting_row, value_locations):
+        """
+        if there is a hidden pair, check other rows to see if there is an x-wing pattern
+        :param values: the values in the hidden pair to look for in other rows
+        :param starting_row: the initial row 
+        :param value_locations: holds the potential y coords of each value in the starting row
+        """
+        # bonus: check to see how many times the values appear in the column
+        for value in values:
+            y1, y2 = value_locations[value]
+            for row in range(9):
+                # if this row is the row we started at, or has solved the value, skip it
+                if row==starting_row or value in self.s_rows[row]:
+                    continue
+                else:
+                    skip_row = False
+                    # check to see if the value is a legal value at both y positions in the row
+                    if value in self.grid[row][y1].legal_values and value in self.grid[row][y2].legal_values:
+                    # check to make sure value doesnt appear outside of those y positions
+                        for i in range(9):
+                            if i not in [y1, y2] and value in self.grid[row][i].legal_values:
+                                skip_row=True
+                                break
+                        if skip_row:
+                            continue
+                        # if they don't, remove the value as a legal option from all other rows except the starting row and the matching row
+                        else: 
+                            for i in range(9):
+                                if i not in [row, starting_row]:
+                                    self.grid[i][y1].update(value)
+                                    self.grid[i][y2].update(value)
     
     def hidden_col_pair(self, col):
         """
@@ -470,9 +523,9 @@ class Grid:
         
         value_locations = {}
         hidden_options = []
-        remaining_values = [e for e in possible_values if e not in self.s_cols[col]]
+        unsolved_values = [e for e in possible_values if e not in self.s_cols[col]]
         # make a dictionary of all cells a value is legal in
-        for i in remaining_values:
+        for i in unsolved_values:
             legal_cells = []
             for x in range(9):
                 if i in self.grid[x][col].legal_values:
@@ -480,10 +533,12 @@ class Grid:
             value_locations[i]=legal_cells
 
         # make a list of all values that only appear twice
-        for i in remaining_values:  
+        for i in unsolved_values:  
             if len(value_locations[i]) == 2:
                 hidden_options.append(i)
         
+        x_wing_values = hidden_options.copy()
+
         # check if those values appear in the same two cells
         while len(hidden_options) >= 2:
             value_a = hidden_options.pop()
@@ -497,6 +552,39 @@ class Grid:
                 break
             if rem_val !="0":
                 hidden_options.remove(rem_val) #  remove matching value to avoid extra loops        
+        self.x_wing_check_col(x_wing_values, col, value_locations)
+
+    def x_wing_check_col(self, values, starting_col, value_locations):
+        """
+        if there is a hidden pair, check other columns to see if there is an x-wing pattern
+        :param values: the values in the hidden pair to look for in other columns
+        :param starting_col: the initial column
+        :param value_locations: holds the potential y coords of each value in the starting column
+        """
+        # bonus: check to see how many times the values appear in the row
+        for value in values:
+            x1, x2 = value_locations[value]
+            for col in range(9):
+                # if this column is the column we started at, or has solved the value, skip it
+                if col==starting_col or value in self.s_cols[col]:
+                    continue
+                else:
+                    skip_col = False
+                    # check to see if the value is a legal value at both x positions in the column
+                    if value in self.grid[x1][col].legal_values and value in self.grid[x2][col].legal_values:
+                    # check to make sure value doesnt appear outside of those x positions
+                        for i in range(9):
+                            if i not in [x1, x2] and value in self.grid[i][col].legal_values:
+                                skip_col=True
+                                break
+                        if skip_col:
+                            continue
+                        # if they don't, remove the value as a legal option from all other columns except the starting column and the matching column
+                        else: 
+                            for i in range(9):
+                                if i not in [col, starting_col]:
+                                    self.grid[x1][i].update(value)
+                                    self.grid[x2][i].update(value)
 
     def compare_legal_values(self, cell_a, box_num):
         x, y = box_dict[box_num]
