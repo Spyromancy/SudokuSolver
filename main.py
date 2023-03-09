@@ -8,12 +8,10 @@ rows, columns, and squares will be made up of Cell objects
                       6 | 7 | 8
 """
 
-grid = "006080900 309760800 040201007 930000000 081649230 000000089 100408090 002037501 003010700"
 possible_values = list("123456789")
 box_dict = {0: (0, 0), 1: (0, 3), 2: (0, 6),
             3: (3, 0), 4: (3, 3), 5: (3, 6),
             6: (6, 0), 7: (6, 3), 8: (6, 6)}
-
 
 class Cell:
     """
@@ -22,11 +20,10 @@ class Cell:
 
     def __init__(self, x_coord, y_coord, init_value):
         """
-
         :param x_coord: int
-            Lets the Cell know where it is on the X-coordinate for grouping purposes
+            Lets the Cell know where it is on the X-axis for grouping purposes
         :param y_coord: int
-            Lets the Cell know where it is on the Y-coordinate for grouping purposes
+            Lets the Cell know where it is on the Y-axis for grouping purposes
         :param init_value: str
             The Cell's (initial) value, left as 0 for an empty cell
         """
@@ -63,28 +60,11 @@ class Cell:
 
     def set(self, kept_values):
         """
-
         :param kept_values: a value or list of values you want to set as the only possible candidates for the Cell
         """
         nix = list("123456789")
         nix = [num for num in nix if num not in kept_values]
         self.update(nix)
-
-    def can_hold(self, potential_values, contains_all=False):
-        """
-        will check the cell's candidates to see it contains one/all values within potential_values
-        :param potential_values: a list of values you want to see as candidates for the Cell
-        :param contains_all: bool, toggles whether the code checks to see if all values are candidates or any of the values are candidates, defaults to False
-        """
-        for value in potential_values:
-            if value not in self.legal_values and contains_all:
-                return False
-            elif value in self.legal_values and not contains_all:
-                return True
-        if contains_all:
-            return True
-        else:
-            return False
 
     def __str__(self):
         return self.value
@@ -93,9 +73,8 @@ class Cell:
 class Grid:
     def __init__(self, grid_values):
         """
-
         :param grid_values: a single string of the values in the grid, row by row, top to bottom, with each row separated with a SPACE.
-        A list of strings is also acceptable. Do NOT make a list of lists, I will punch you.
+        A list of strings is also acceptable.
 
         """
         self.grid_values = []
@@ -119,15 +98,9 @@ class Grid:
                 grid_values[i] = list(grid_values[i])
             self.grid_values = grid_values
         # turns grid_values into a list of string lists
-            # 2023 self here, i'm assuming you don't want people to give you a list of lists because that'd be a PITA to create for a person, better to let the code 
-            # do it for you but it seems like you went out of your way to not make it possible for it to work and I don't understand why you did that past me. like, c'mon.
-                # Q. so why don't you add it now?
-                # A. i don't wanna.
         else:
-            print("I only accept a single string separated with spaces or a list of 9 strings.") # 2023: again like, c'mon man
+            print("I only accept a single string separated with spaces or a list of 9 strings.")
             raise TypeError
-            #  if(type(grid_values)== list and type(grid_values[0])== list)
-                #  print("Also, i'm punching you.") 
 
         # populate the rows and columns of the sudoku puzzle with Cells
         for x in range(9):
@@ -168,7 +141,7 @@ class Grid:
 
     def update(self):
         """
-        updates the grid allowing the solved values for each row/col/box to be updated.
+        updates the grid allowing the solved values for each row/column/box to be updated.
         """
         gr = ""
         for row in self.grid:
@@ -176,19 +149,6 @@ class Grid:
                 gr += str(cell)
             gr += " "
         self.__init__(gr)
-
-    def row_check(self, y_coord):
-        """
-        row_check() goes to each empty Cell in a given row, and removes already solved values from the list of legal
-        values for that Cell. This process checks both the solved values of the Cell's row and column.
-        :param y_coord: the y-coordinate of the row being checked. 
-
-        """
-        #  so I realize box_check is just a strictly better version since it gets all 3, but i don't wanna delete this just in case
-        for i in range(9):
-            if self.grid[y_coord][i].value == "0":
-                illegal_values = self.s_rows[y_coord] + self.s_cols[i]
-                self.grid[y_coord][i].update(list(set(illegal_values)))
 
     def box_check(self, box_num):
         """
@@ -488,7 +448,7 @@ class Grid:
         :param starting_row: the initial row 
         :param value_locations: holds the potential y coords of each value in the starting row
         """
-        # bonus: check to see how many times the values appear in the column
+        # bonus: check to see how many times the values appear in the column? see if this whole process is even worth doing?
         for value in values:
             y1, y2 = value_locations[value]
             for row in range(9):
@@ -559,7 +519,7 @@ class Grid:
         :param starting_col: the initial column
         :param value_locations: holds the potential y coords of each value in the starting column
         """
-        # bonus: check to see how many times the values appear in the row
+        # bonus: check to see how many times the values appear in the row? see if this whole process is even worth doing?
         for value in values:
             x1, x2 = value_locations[value]
             for col in range(9):
@@ -665,11 +625,11 @@ class Grid:
         g_v = []
         for i in range(9):
             row = self.grid_values[i]
-            row.insert(6, " ")
-            row.insert(3, " ")
+            row.insert(6, "|")
+            row.insert(3, "|")
             g_v.append("".join(row))
             if i == 2 or i == 5:
-                g_v.append(" ")
+                g_v.append("-----------")
         
         return "\n".join(g_v)
     
@@ -679,4 +639,11 @@ class Grid:
             g_v.append("".join(row))
         return "\n".join(g_v)
 
-g = Grid("000000000 018049000 950073860 600000980 500010003 074000006 097320045 000490120 000000000")
+
+grid0 = "000000000 018049000 950073860 600000980 500010003 074000006 097320045 000490120 000000000"
+grid1 = "006080900 309760800 040201007 930000000 081649230 000000089 100408090 002037501 003010700"
+grid2 = "108530600 020001000 040000008 805003009 004000000 000090200 309005002 000600070 010000000"
+prompt = "Please enter a solvable sudoku grid, row by row, with a space between each row and a 0 to represent an empty square:"
+input_grid = input(f"{prompt}\n (e.g. {grid1})\n").strip()
+
+g = Grid(input_grid)
